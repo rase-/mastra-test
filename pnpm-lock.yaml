@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@mastra/core':
-        specifier: 0.1.27-alpha.70
-        version: 0.1.27-alpha.70(@aws-sdk/client-sso-oidc@3.726.0(@aws-sdk/client-sts@3.726.1))(encoding@0.1.13)(react@19.0.0)
+        specifier: 0.1.27-alpha.71
+        version: 0.1.27-alpha.71(@aws-sdk/client-sso-oidc@3.726.0(@aws-sdk/client-sts@3.726.1))(encoding@0.1.13)(react@19.0.0)
       zod:
         specifier: ^3.24.0
         version: 3.24.1
@@ -447,8 +447,8 @@ packages:
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
 
-  '@mastra/core@0.1.27-alpha.70':
-    resolution: {integrity: sha512-pxCf4+/yYE9erRntLFNctbWzNhY5NE36WeBMnwwkOcgks5NzwLyeQtfSGEN3Bv/d4j5DRVZFud5xsHmb47kL9g==}
+  '@mastra/core@0.1.27-alpha.71':
+    resolution: {integrity: sha512-2p6WE15jBXjV9UExw5A+L74nHodD3Y8KQVBk9ZUvyrSTIibL1XyOmP4/vQPg/z3d8ujuBRCLgausMqZPvhgKOg==}
     engines: {node: '>=20'}
 
   '@opentelemetry/api-logs@0.55.0':
@@ -2843,7 +2843,7 @@ snapshots:
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
-  '@mastra/core@0.1.27-alpha.70(@aws-sdk/client-sso-oidc@3.726.0(@aws-sdk/client-sts@3.726.1))(encoding@0.1.13)(react@19.0.0)':
+  '@mastra/core@0.1.27-alpha.71(@aws-sdk/client-sso-oidc@3.726.0(@aws-sdk/client-sts@3.726.1))(encoding@0.1.13)(react@19.0.0)':
     dependencies:
       '@ai-sdk/amazon-bedrock': 1.0.8(zod@3.24.1)
       '@ai-sdk/anthropic': 1.0.8(zod@3.24.1)
