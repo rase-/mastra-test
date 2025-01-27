@@ -17,7 +17,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "@mastra/core": "0.1.27-alpha.72",
+    "@mastra/core": "0.1.27-alpha.74",
     "zod": "^3.24.0"
   }
 }
