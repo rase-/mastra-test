@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { setTimeout } from 'node:timers/promises'
 
 import { mastra } from './mastra'
 
@@ -25,6 +26,7 @@ const main = async () => {
 
     await start({ triggerData: { name: res.species } })
   } catch (err) {
+    await mastra.getTelemetry()?.shutdown()
     console.error(err)
   }
 }
