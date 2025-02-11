@@ -4,14 +4,15 @@ import { logCatWorkflow } from './workflow'
 
 const storage = new MastraStorageLibSql({
   config: {
-    // url: 'file:mastra.db',
-    url: 'libsql://testdb-rase-.turso.io',
+    url: 'file:mastra.db',
+    syncUrl: 'libsql://testdb-mastra.turso.io',
     authToken:
-      'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MzkyODA2NzIsImlkIjoiYjNlZjFkYjEtMGQ0My00NzdkLWFmNTEtZjdiYmFhMGY1YjU4In0.P_7fstavSxQv8IqoqOnGyCw-8xTP2caKri-itlmqWIaUsVKWqNOPnB55Z7mqaUUsysrDgr0Or8bjSf5AG6ewAQ',
+      'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MzkyODEzODQsImlkIjoiZTIxZTk0ZGUtODA3OC00YmRlLThlNTItNjEwODMxYmExYTgzIn0.Mf4sTSnkxteTii9di4F65KGECbvaN1EUIkq8CtKab4dUzrQe3gNgLfPg2O7-R_FhpLfdsoeXR5xzEbJSoS_ODg',
   },
 })
 
-// await storage.sync()
+await storage.init()
+await storage.sync()
 
 export const mastra = new Mastra({
   agents: { catOne, agentTwo },
