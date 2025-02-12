@@ -9,8 +9,8 @@ export const mastra = new Mastra({
     process.env.MASTRA_DB_URL && process.env.MASTRA_DB_AUTH_TOKEN
       ? new MastraStorageLibSql({
           config: {
-            url: process.env.MASTRA_DB_URL,
-            authToken: process.env.MASTRA_DB_AUTH_TOKEN,
+            url: process.env.MASTRA_STORAGE_URL,
+            authToken: process.env.MASTRA_STORAGE_AUTH_TOKEN,
           },
         })
       : undefined,
