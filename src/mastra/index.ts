@@ -2,6 +2,7 @@ import { Mastra, MastraStorageLibSql } from '@mastra/core'
 import { catOne, agentTwo } from './agents/agent'
 import { logCatWorkflow } from './workflow'
 
+console.log(process.env)
 let storage = undefined
 if (process.env.MASTRA_STORAGE_URL && process.env.MASTRA_STORAGE_AUTH_TOKEN) {
   console.log('Using Mastra Cloud Storage: ' + process.env.MASTRA_STORAGE_URL)
