@@ -1,5 +1,5 @@
-import { Workflow, Step } from '@mastra/core';
-import { z } from 'zod';
+import { Workflow, Step } from '@mastra/core'
+import { z } from 'zod'
 
 const logCatName = new Step({
   id: 'logCatName',
@@ -7,17 +7,17 @@ const logCatName = new Step({
     rawText: z.string(),
   }),
   execute: async ({ context }) => {
-    const name = context?.machineContext?.getStepPayload<{ name: string }>('trigger')?.name;
-    console.log(`Hello, ${name} 🐈`);
-    return { rawText: `Hello ${name}` };
+    const name = context?.getStepPayload<{ name: string }>('trigger')?.name
+    console.log(`Hello, ${name} 🐈`)
+    return { rawText: `Hello ${name}` }
   },
-});
+})
 
 export const logCatWorkflow = new Workflow({
   name: 'log-cat-workflow',
   triggerSchema: z.object({
     name: z.string(),
   }),
-});
+})
 
-logCatWorkflow.step(logCatName).commit();
+logCatWorkflow.step(logCatName).commit()
