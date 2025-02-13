@@ -13,6 +13,27 @@ const logCatName = new Step({
   },
 })
 
+const logCatPrompt = new Step({
+  id: 'logCatPrompt',
+  outputSchema: z.object({
+    output: z.string(),
+  }),
+  execute: async ({ context, mastra }) => {
+    // @ts-ignore
+    const name = context.steps.logCatName?.output?.rawText
+    let output = 'fail'
+    if (name) {
+      const resp = await mastra?.agents?.catOne?.generate([
+        { role: 'User', message: name.rawText },
+      ])
+      if (resp?.text) {
+        output = resp.text
+      }
+    }
+    return { output }
+  },
+})
+
 export const logCatWorkflow = new Workflow({
   name: 'log-cat-workflow',
   triggerSchema: z.object({
@@ -20,4 +41,4 @@ export const logCatWorkflow = new Workflow({
   }),
 })
 
-logCatWorkflow.step(logCatName).commit()
+logCatWorkflow.step(logCatName).then(logCatPrompt).commit()
