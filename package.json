@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.1.9",
-    "@mastra/core": "0.2.0-alpha.96",
+    "@mastra/core": "0.2.0-alpha.104",
     "dotenv": "^16.4.7",
     "zod": "^3.24.0"
   }

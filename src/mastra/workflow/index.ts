@@ -24,7 +24,7 @@ const logCatPrompt = new Step({
     let output = 'fail'
     if (name) {
       const resp = await mastra?.agents?.catOne?.generate([
-        { role: 'User', message: name.rawText },
+        { role: 'user', content: name.rawText },
       ])
       if (resp?.text) {
         output = resp.text
