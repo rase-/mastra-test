@@ -1,6 +1,6 @@
 import { Mastra, MastraStorageLibSql } from '@mastra/core'
 import { catOne, agentTwo } from './agents/agent'
-import { logCatWorkflow } from './workflow'
+import { logCatWorkflow, promptAgentWorkflow } from './workflow'
 
 const storage = new MastraStorageLibSql({
   config: {
@@ -12,6 +12,7 @@ await storage.init()
 
 export const mastra = new Mastra({
   agents: { catOne, agentTwo },
-  workflows: { logCatWorkflow },
+  workflows: { logCatWorkflow, promptAgentWorkflow },
   storage,
+  logger: false,
 })

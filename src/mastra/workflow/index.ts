@@ -1,4 +1,5 @@
 import { Workflow, Step } from '@mastra/core'
+import { ToneConsistencyMetric, CompletenessMetric } from '@mastra/evals/nlp'
 import { z } from 'zod'
 
 const logCatName = new Step({
@@ -42,3 +43,142 @@ export const logCatWorkflow = new Workflow({
 })
 
 logCatWorkflow.step(logCatName).then(logCatPrompt).commit()
+
+const getUserInput = new Step({
+  id: 'getUserInput',
+  outputSchema: z.object({
+    userInput: z.string(),
+  }),
+  execute: async ({ context }) => {
+    const userInput = context?.getStepPayload<string>('trigger')
+    return { userInput: userInput?.trim() || '' }
+  },
+})
+
+const promptAgent = new Step({
+  id: 'promptAgent',
+  outputSchema: z.object({
+    modelOutput: z.string(),
+  }),
+  execute: async ({ context, mastra, suspend }) => {
+    // @ts-ignore
+    const userInput = context.steps.getUserInput?.output?.userInput
+    if (!userInput) {
+      await suspend()
+    }
+
+    const resp = await mastra?.agents?.catOne?.generate([userInput])
+
+    if (!resp?.text) {
+      await suspend()
+    }
+
+    const txt: string = resp?.text as string
+    return { modelOutput: txt }
+  },
+})
+
+const evaluateToneConsistency = new Step({
+  id: 'evaluateToneConsistency',
+  outputSchema: z.object({
+    toneScore: z.any(),
+    completenessScore: z.any(),
+  }),
+  execute: async ({ context }) => {
+    // @ts-ignore
+    const modelOutput = context.steps.promptAgent?.output?.modelOutput
+
+    // @ts-ignore
+    const userInput = context.steps.getUserInput?.output?.userInput
+    if (!modelOutput) {
+      return { toneScore: 0, completenessScore: 0 }
+    }
+
+    const toneMetric = new ToneConsistencyMetric()
+    const completenessMetric = new CompletenessMetric()
+
+    const [toneScore, completenessScore] = await Promise.all([
+      toneMetric.measure(userInput, modelOutput),
+      completenessMetric.measure(userInput, modelOutput),
+    ])
+
+    return { toneScore, completenessScore }
+  },
+})
+
+const improveResponse = new Step({
+  id: 'improveResponse',
+  outputSchema: z.object({
+    improvedOutput: z.string(),
+  }),
+  execute: async ({ context, mastra }) => {
+    // @ts-ignore
+    const userInput = context.steps.getUserInput?.output?.userInput
+    // @ts-ignore
+    const modelOutput = context.steps.promptAgent?.output?.modelOutput
+    // @ts-ignore
+    const { toneScore, completenessScore } =
+      // @ts-ignore
+      context.steps.evaluateToneConsistency?.output
+
+    const prompt = `Previous response: "${modelOutput}"
+Evaluation metrics:
+- Tone consistency score: ${JSON.stringify(toneScore)}
+- Completeness score: ${JSON.stringify(completenessScore)}
+
+Please provide an improved response to the user's input: "${userInput}"
+Focus on maintaining consistent tone and ensuring complete coverage of the user's request. Be inventive in trying to improve the completeness score.`
+
+    console.dir({ finalPrompt: prompt }, { depth: 5 })
+    const resp = await mastra?.agents?.catOne?.generate([prompt])
+    return { improvedOutput: resp?.text || modelOutput }
+  },
+})
+
+const evaluateImprovedResponse = new Step({
+  id: 'evaluateImprovedResponse',
+  outputSchema: z.object({
+    toneScore: z.any(),
+    completenessScore: z.any(),
+  }),
+  execute: async ({ context }) => {
+    // @ts-ignore
+    const modelOutput = context.steps.improveResponse?.output?.improvedOutput
+    // @ts-ignore
+    const userInput = context.steps.getUserInput?.output?.userInput
+    if (!modelOutput) {
+      return { toneScore: 0, completenessScore: 0 }
+    }
+
+    const toneMetric = new ToneConsistencyMetric()
+    const completenessMetric = new CompletenessMetric()
+
+    const [toneScore, completenessScore] = await Promise.all([
+      toneMetric.measure(userInput, modelOutput),
+      completenessMetric.measure(userInput, modelOutput),
+    ])
+
+    console.dir(
+      {
+        finalMetrics: { toneScore, completenessScore },
+        improvedOutput: modelOutput,
+      },
+      { depth: 5 }
+    )
+
+    return { toneScore, completenessScore }
+  },
+})
+
+export const promptAgentWorkflow = new Workflow({
+  name: 'prompt-agent-workflow',
+  triggerSchema: z.string(),
+})
+
+promptAgentWorkflow
+  .step(getUserInput)
+  .then(promptAgent)
+  .then(evaluateToneConsistency)
+  .then(improveResponse)
+  .then(evaluateImprovedResponse)
+  .commit()
