@@ -39,6 +39,7 @@ export const logCatWorkflow = new Workflow({
   name: 'log-cat-workflow',
   triggerSchema: z.object({
     name: z.string(),
+    humanConfirmation: z.boolean().optional(),
   }),
 })
 
@@ -115,7 +116,7 @@ const improveResponse = new Step({
   outputSchema: z.object({
     improvedOutput: z.string(),
   }),
-  execute: async ({ context, mastra }) => {
+  execute: async ({ context, mastra, suspend }) => {
     // @ts-ignore
     const userInput = context.steps.getUserInput?.output?.userInput
     // @ts-ignore
@@ -133,7 +134,19 @@ Evaluation metrics:
 Please provide an improved response to the user's input: "${userInput}"
 Focus on maintaining consistent tone and ensuring complete coverage of the user's request. Be inventive in trying to improve the completeness score.`
 
-    console.dir({ finalPrompt: prompt }, { depth: 5 })
+    // wait for human to review
+    const { humanConfirmation } =
+      context.getStepPayload<{ humanConfirmation: boolean }>(
+        'improveResponse'
+      ) ?? {}
+    console.dir(
+      { humanConfirmation, finalPrompt: prompt, context },
+      { depth: 5 }
+    )
+
+    if (!humanConfirmation) {
+      await suspend()
+    }
     const resp = await mastra?.agents?.catOne?.generate([prompt])
     return { improvedOutput: resp?.text || modelOutput }
   },
