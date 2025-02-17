@@ -4,8 +4,8 @@ import { logCatWorkflow, promptAgentWorkflow } from './workflow'
 
 const storage = new MastraStorageLibSql({
   config: {
-    url: ':memory:',
-    // url: 'file:mastra.db',
+    // url: ':memory:',
+    url: 'file:mastra.db',
   },
 })
 

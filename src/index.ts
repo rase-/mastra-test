@@ -1,5 +1,3 @@
-import { z } from 'zod'
-
 import { mastra } from './mastra'
 
 const main = async () => {
@@ -48,4 +46,7 @@ const main = async () => {
   })
 }
 
-main()
+main().then(() => {
+  const telemetry = mastra.getTelemetry()
+  return telemetry?.shutdown()
+})
