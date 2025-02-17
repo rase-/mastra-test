@@ -2,31 +2,41 @@ import { z } from 'zod'
 
 import { mastra } from './mastra'
 
-const specieSchema = z.object({
-  species: z.string(),
-})
-
 const main = async () => {
-  const agentCat = mastra.getAgent('catOne')
+  const promptAgentWorkflow = mastra.getWorkflow('promptAgentWorkflow')
+  const wf = promptAgentWorkflow.createRun()
 
-  try {
-    const result = await agentCat.generate(
-      'What is the most popular cat species?',
-      {
-        output: specieSchema,
+  promptAgentWorkflow.watch((data) => {
+    console.log('DATA', JSON.stringify(data, null, 2))
+    const suspended = data.activePaths.find((p) => p.status === 'suspended')
+
+    if (suspended) {
+      const newCtx = {
+        ...data.context,
       }
-    )
 
-    const res = specieSchema.parse(result?.object)
+      // @ts-ignore
+      newCtx.steps[suspended.stepId].status = 'executing'
+      // @ts-ignore
+      newCtx.steps.getUserInput.output = {
+        userInput:
+          'yoyo catto, tell me what is a good cat breed for me. I like lazy cats who like being indoors and are cuddly but not too needy.',
+      }
 
-    console.log(res.species)
+      setTimeout(() => {
+        promptAgentWorkflow.resume({
+          runId: wf.runId,
+          stepId: suspended.stepId,
+          context: newCtx,
+        })
+      }, 1e3 * 5)
+    }
+  })
 
-    const { start } = mastra.getWorkflow('logCatWorkflow').createRun()
-
-    await start({ triggerData: { name: res.species } })
-  } catch (err) {
-    console.error(err)
-  }
+  await wf.start({
+    triggerData: { input: '' },
+    // 'yoyo catto, tell me what is a good cat breed for me. I like lazy cats who like being indoors and are cuddly but not too needy.',
+  })
 }
 
 main()

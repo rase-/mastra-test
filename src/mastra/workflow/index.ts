@@ -49,9 +49,11 @@ const getUserInput = new Step({
   outputSchema: z.object({
     userInput: z.string(),
   }),
-  execute: async ({ context }) => {
-    const userInput = context?.getStepPayload<string>('trigger')
-    return { userInput: userInput?.trim() || '' }
+  execute: async (opts) => {
+    const { context } = opts
+    const userInput = context?.getStepPayload<{ input: string }>('trigger')
+    console.log('USER INPUT', userInput)
+    return { userInput: userInput ? userInput?.input?.trim() : '' }
   },
 })
 
@@ -63,6 +65,7 @@ const promptAgent = new Step({
   execute: async ({ context, mastra, suspend }) => {
     // @ts-ignore
     const userInput = context.steps.getUserInput?.output?.userInput
+    console.log({ context })
     if (!userInput) {
       await suspend()
     }
@@ -70,6 +73,7 @@ const promptAgent = new Step({
     const resp = await mastra?.agents?.catOne?.generate([userInput])
 
     if (!resp?.text) {
+      console.log('AGENT GENERATION ERROR', resp)
       await suspend()
     }
 
@@ -172,7 +176,9 @@ const evaluateImprovedResponse = new Step({
 
 export const promptAgentWorkflow = new Workflow({
   name: 'prompt-agent-workflow',
-  triggerSchema: z.string(),
+  triggerSchema: z.object({
+    input: z.string(),
+  }),
 })
 
 promptAgentWorkflow
