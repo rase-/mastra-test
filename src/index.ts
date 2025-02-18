@@ -1,11 +1,12 @@
 import { mastra } from './mastra'
+import * as readline from 'readline'
 
 const main = async () => {
   const promptAgentWorkflow = mastra.getWorkflow('promptAgentWorkflow')
   const wf = promptAgentWorkflow.createRun()
 
   promptAgentWorkflow.watch((data) => {
-    console.log('DATA', JSON.stringify(data, null, 2))
+    console.log('active paths', data.value)
     const suspended = data.activePaths.find((p) => p.status === 'suspended')
 
     if (suspended?.stepId === 'promptAgent') {
@@ -34,6 +35,20 @@ const main = async () => {
           context: { humanConfirmation: true },
         })
       }, 1e3 * 5)
+    } else if (suspended?.stepId === 'humanIntervention') {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      })
+
+      rl.question('Please enter your prompt: ', (userInput) => {
+        rl.close()
+        promptAgentWorkflow.resume({
+          runId: wf.runId,
+          stepId: suspended.stepId,
+          context: { humanPrompt: userInput },
+        })
+      })
     }
   })
 

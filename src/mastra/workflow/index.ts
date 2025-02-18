@@ -53,7 +53,6 @@ const getUserInput = new Step({
   execute: async (opts) => {
     const { context } = opts
     const userInput = context?.getStepPayload<{ input: string }>('trigger')
-    console.log('USER INPUT', userInput)
     return { userInput: userInput ? userInput?.input?.trim() : '' }
   },
 })
@@ -66,7 +65,6 @@ const promptAgent = new Step({
   execute: async ({ context, mastra, suspend }) => {
     // @ts-ignore
     const userInput = context.steps.getUserInput?.output?.userInput
-    console.log({ context })
     if (!userInput) {
       await suspend()
     }
@@ -74,11 +72,10 @@ const promptAgent = new Step({
     const resp = await mastra?.agents?.catOne?.generate([userInput])
 
     if (!resp?.text) {
-      console.log('AGENT GENERATION ERROR', resp)
       await suspend()
     }
 
-    const txt: string = resp?.text as string
+    const txt: string = resp!.text!
     return { modelOutput: txt }
   },
 })
@@ -139,10 +136,6 @@ Focus on maintaining consistent tone and ensuring complete coverage of the user'
       context.getStepPayload<{ humanConfirmation: boolean }>(
         'improveResponse'
       ) ?? {}
-    console.dir(
-      { humanConfirmation, finalPrompt: prompt, context },
-      { depth: 5 }
-    )
 
     if (!humanConfirmation) {
       await suspend()
@@ -175,15 +168,67 @@ const evaluateImprovedResponse = new Step({
       completenessMetric.measure(userInput, modelOutput),
     ])
 
-    console.dir(
-      {
-        finalMetrics: { toneScore, completenessScore },
-        improvedOutput: modelOutput,
-      },
-      { depth: 5 }
-    )
-
     return { toneScore, completenessScore }
+  },
+})
+
+const humanIntervention = new Step({
+  id: 'humanIntervention',
+  outputSchema: z.object({
+    improvedOutput: z.string(),
+  }),
+  execute: async ({ context, mastra, suspend }) => {
+    const { humanPrompt } =
+      context.getStepPayload<{ humanPrompt: string }>('humanIntervention') ?? {}
+
+    if (!humanPrompt) {
+      console.log('no human prompt, suspending')
+      await suspend()
+      return { improvedOutput: '' }
+    }
+
+    const resp = await mastra?.agents?.catOne?.generate([humanPrompt])
+    console.dir({ humanPrompt, humanInterventionResp: resp?.text })
+    return { improvedOutput: resp?.text ?? '' }
+  },
+})
+
+const explainResponse = new Step({
+  id: 'explainResponse',
+  outputSchema: z.object({
+    improvedOutput: z.string(),
+  }),
+  execute: async ({ context, mastra, suspend }) => {
+    // @ts-ignore
+    const originalPrompt = context.steps.getUserInput?.output?.userInput
+    // @ts-ignore
+    const originalResponse = context.steps.promptAgent?.output?.modelOutput
+    // @ts-ignore
+    const originalEvals = context.steps.evaluateToneConsistency?.output
+    const improvedResponse =
+      // @ts-ignore
+      context.steps.improveResponse?.output?.improvedOutput
+    // @ts-ignore
+    const improvedEvals = context.steps.evaluateImprovedResponse?.output
+
+    const resp = await mastra?.agents?.catOne?.generate([
+      {
+        role: 'system',
+        content:
+          'Compare the original and improved versions of a prompt and its responses, explaining why the improvements led to better results.',
+      },
+      {
+        role: 'user',
+        content: `Original Prompt: ${originalPrompt}\nOriginal Response: ${originalResponse}\nOriginal Evaluations: ${JSON.stringify(
+          originalEvals
+        )}\n\nImproved Response: ${improvedResponse}\nImproved Evaluations: ${JSON.stringify(
+          improvedEvals
+        )}\n\nExplain why the improved version performed better, analyzing the changes in the responses and the evaluation scores. Also show the differences in scores (in numbers).`,
+      },
+    ])
+
+    console.dir({ explanation: resp?.text }, { depth: 5 })
+    return { improvedOutput: resp?.text ?? 'Unable to generate explanation' }
   },
 })
 
@@ -200,4 +245,42 @@ promptAgentWorkflow
   .then(evaluateToneConsistency)
   .then(improveResponse)
   .then(evaluateImprovedResponse)
+  .after(evaluateImprovedResponse)
+  .step(humanIntervention, {
+    when: ({ context }) => {
+      const firstScore =
+        // @ts-ignore
+        context.steps.evaluateToneConsistency?.output?.completenessScore.score
+
+      const finalScore =
+        // @ts-ignore
+        context.steps.evaluateImprovedResponse?.output?.completenessScore.score
+
+      console.dir({
+        condition: finalScore - firstScore < 0.2,
+        finalScore,
+        firstScore,
+      })
+      return Promise.resolve(
+        // @ts-ignore
+        finalScore - firstScore < 0.2
+      )
+    },
+  })
+  .step(explainResponse, {
+    when: ({ context }) => {
+      const firstScore =
+        // @ts-ignore
+        context.steps.evaluateToneConsistency?.output?.completenessScore.score
+
+      const finalScore =
+        // @ts-ignore
+        context.steps.evaluateImprovedResponse?.output?.completenessScore.score
+
+      return Promise.resolve(
+        // @ts-ignore
+        finalScore - firstScore >= 0.1
+      )
+    },
+  })
   .commit()
