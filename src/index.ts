@@ -5,9 +5,13 @@ const main = async () => {
   const promptAgentWorkflow = mastra.getWorkflow('promptAgentWorkflow')
   const wf = promptAgentWorkflow.createRun()
 
+  let did = false
   promptAgentWorkflow.watch((data) => {
     console.log('active paths', data.value)
     const suspended = data.activePaths.find((p) => p.status === 'suspended')
+    if (suspended) {
+      console.log('suspended', suspended)
+    }
 
     if (suspended?.stepId === 'promptAgent') {
       const newCtx = {
@@ -36,19 +40,32 @@ const main = async () => {
         })
       }, 1e3 * 5)
     } else if (suspended?.stepId === 'humanIntervention') {
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      })
-
-      rl.question('Please enter your prompt: ', (userInput) => {
-        rl.close()
+      console.log('IN THE IF')
+      if (did) {
+        return
+      }
+      did = true
+      setTimeout(() => {
         promptAgentWorkflow.resume({
           runId: wf.runId,
           stepId: suspended.stepId,
-          context: { humanPrompt: userInput },
+          context: { humanPrompt: 'hello, what is a bengal cat?' },
         })
-      })
+      }, 1e3 * 5)
+
+      // const rl = readline.createInterface({
+      //   input: process.stdin,
+      //   output: process.stdout,
+      // })
+      //
+      // rl.question('Please enter your prompt: ', (userInput) => {
+      //   rl.close()
+      //   promptAgentWorkflow.resume({
+      //     runId: wf.runId,
+      //     stepId: suspended.stepId,
+      //     context: { humanPrompt: userInput },
+      //   })
+      // })
     }
   })
 

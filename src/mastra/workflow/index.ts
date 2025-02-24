@@ -184,9 +184,9 @@ const humanIntervention = new Step({
     if (!humanPrompt) {
       console.log('no human prompt, suspending')
       await suspend()
-      return { improvedOutput: '' }
     }
 
+    // @ts-ignore
     const resp = await mastra?.agents?.catOne?.generate([humanPrompt])
     console.dir({ humanPrompt, humanInterventionResp: resp?.text })
     return { improvedOutput: resp?.text ?? '' }
