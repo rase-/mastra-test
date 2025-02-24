@@ -7,7 +7,7 @@ const main = async () => {
 
   let did = false
   promptAgentWorkflow.watch((data) => {
-    console.log('active paths', data.value)
+    console.log('active paths', JSON.stringify(data.value, null, 2))
     const suspended = data.activePaths.find((p) => p.status === 'suspended')
     if (suspended) {
       console.log('suspended', suspended)
