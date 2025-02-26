@@ -8,7 +8,7 @@ const logCatName = new Step({
     rawText: z.string(),
   }),
   execute: async ({ context }) => {
-    const name = context?.getStepPayload<{ name: string }>('trigger')?.name
+    const name = context?.getStepResult<{ name: string }>('trigger')?.name
     console.log(`Hello, ${name} 🐈`)
     return { rawText: `Hello ${name}` }
   },
@@ -52,7 +52,7 @@ const getUserInput = new Step({
   }),
   execute: async (opts) => {
     const { context } = opts
-    const userInput = context?.getStepPayload<{ input: string }>('trigger')
+    const userInput = context?.getStepResult<{ input: string }>('trigger')
     return { userInput: userInput ? userInput?.input?.trim() : '' }
   },
 })
@@ -133,7 +133,7 @@ Focus on maintaining consistent tone and ensuring complete coverage of the user'
 
     // wait for human to review
     const { humanConfirmation } =
-      context.getStepPayload<{ humanConfirmation: boolean }>(
+      context.getStepResult<{ humanConfirmation: boolean }>(
         'improveResponse'
       ) ?? {}
 
@@ -179,7 +179,7 @@ const humanIntervention = new Step({
   }),
   execute: async ({ context, mastra, suspend }) => {
     const { humanPrompt } =
-      context.getStepPayload<{ humanPrompt: string }>('humanIntervention') ?? {}
+      context.getStepResult<{ humanPrompt: string }>('humanIntervention') ?? {}
 
     if (!humanPrompt) {
       console.log('no human prompt, suspending')
@@ -263,7 +263,7 @@ promptAgentWorkflow
       })
       return Promise.resolve(
         // @ts-ignore
-        finalScore - firstScore < 0.2
+        finalScore - firstScore < 0.5
       )
     },
   })
@@ -279,7 +279,7 @@ promptAgentWorkflow
 
       return Promise.resolve(
         // @ts-ignore
-        finalScore - firstScore >= 0.1
+        finalScore - firstScore >= 0.5
       )
     },
   })

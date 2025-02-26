@@ -6,8 +6,8 @@ const main = async () => {
   const wf = promptAgentWorkflow.createRun()
 
   let did = false
-  promptAgentWorkflow.watch((data) => {
-    console.log('active paths', JSON.stringify(data.value, null, 2))
+  let promises: Promise<any>[] = []
+  promptAgentWorkflow.watch(async (data) => {
     const suspended = data.activePaths.find((p) => p.status === 'suspended')
     if (suspended) {
       console.log('suspended', suspended)
@@ -24,34 +24,35 @@ const main = async () => {
           'yoyo catto, tell me what is a good cat breed for me. I like lazy cats who like being indoors and are cuddly but not too needy.',
       }
 
-      setTimeout(() => {
+      await new Promise((resolve) => setTimeout(resolve, 1e3 * 5))
+      promises.push(
         promptAgentWorkflow.resume({
           runId: wf.runId,
           stepId: suspended.stepId,
           context: newCtx,
         })
-      }, 1e3 * 5)
+      )
     } else if (suspended?.stepId === 'improveResponse') {
-      setTimeout(() => {
+      await new Promise((resolve) => setTimeout(resolve, 1e3 * 5))
+      promises.push(
         promptAgentWorkflow.resume({
           runId: wf.runId,
           stepId: suspended.stepId, // 'evaluateToneConsistency',
           context: { humanConfirmation: true },
         })
-      }, 1e3 * 5)
+      )
     } else if (suspended?.stepId === 'humanIntervention') {
-      console.log('IN THE IF')
       if (did) {
         return
       }
       did = true
-      setTimeout(() => {
+      promises.push(
         promptAgentWorkflow.resume({
           runId: wf.runId,
           stepId: suspended.stepId,
           context: { humanPrompt: 'hello, what is a bengal cat?' },
         })
-      }, 1e3 * 5)
+      )
 
       // const rl = readline.createInterface({
       //   input: process.stdin,
@@ -69,13 +70,19 @@ const main = async () => {
     }
   })
 
-  await wf.start({
+  const result = await wf.start({
     // triggerData: { input: '' },
     triggerData: {
       input:
         'yoyo catto, tell me what is a good cat breed for me. I like lazy cats who like being indoors and are cuddly but not too needy.',
     },
   })
+
+  console.log('RESULT', result)
+
+  await new Promise((resolve) => setTimeout(resolve, 1e3 * 20))
+  const results = await Promise.all(promises)
+  console.log('RESULTS', results)
 }
 
 main().then(() => {
